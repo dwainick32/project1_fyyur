@@ -13,70 +13,20 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
+from models import *
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
-
+db = SQLAlchemy(app)
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # TODO: connect to a local postgresql database
 #connected to the database in config.py
 
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
 
-class Venue(db.Model):
-    __tablename__ = 'Venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    shows = db.relationship('Shows', backref='venue')
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    #implemented the shows field 
-     
-
-class Artist(db.Model):
-    __tablename__ = 'Artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    #the phone can be changed to a number 
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    shows = db.relationship('Shows', backref='artist')
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    # implemented the shows field 
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-#will have to make a show class which will have a one to many relationship with the artist class. For every one show, there is one artist. An artist will have more than one show
-#every venue will have multiple shows 
-#There is also a one to many relationship with the venue. Every show will have one venue but every artist will have more than one show
-class Shows(db.Model):
-  __tablename__ = 'Shows'
-  id = db.Column(db.Integer, primary_key=True)
-  show_time = db.Column(db.DateTime, nullable=False)
-  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
-  #to get the venue name, I can apparently write a select statement that selects it. I, however, don't
-  #think that is the best way to do it 
-  #select name from artist where id = artist_id
-  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -134,7 +84,10 @@ def show_venue(venue_id):
   # TODO: replace with real venue data from the venues table, using venue_id
   #data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
   data = Venue.query.get(venue_id)
-  return render_template('pages/show_venue.html', venue=data)
+  time1 = datetime.now()
+  upcoming_shows = Shows.query.filter(Shows.venue_id == venue_id, Shows.show_time>time1).all()
+  past_shows = Shows.query.filter(Shows.venue_id == venue_id, Shows.show_time<time1).all()
+  return render_template('pages/show_venue.html', venue=data, upcoming_shows=upcoming_shows, past_shows=past_shows)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -210,7 +163,10 @@ def show_artist(artist_id):
   # TODO: replace with real venue data from the venues table, using venue_id
   #data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
   data1 = Artist.query.get(artist_id)
-  return render_template('pages/show_artist.html', artist=data1)
+  time1 = datetime.now()
+  upcoming_shows = Shows.query.filter(Shows.artist_id == artist_id, Shows.show_time>time1).all()
+  past_shows = Shows.query.filter(Shows.artist_id == artist_id, Shows.show_time<time1).all()
+  return render_template('pages/show_artist.html', artist=data1, upcoming_shows=upcoming_shows, past_shows=past_shows)
 
 #  Update
 #  ----------------------------------------------------------------
