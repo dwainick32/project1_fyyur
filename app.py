@@ -138,10 +138,11 @@ def delete_venue(venue_id):
     Venue.query.filter_by(id=venue_id).delete()
     flash('Venue deleted')
   except:
-    traceback.print_exc()
+    #traceback.print_exc()
     flash('Venue was not successfully deleted')
+    return render_template('pages/home.html')
   
-  return redirect(url_for('index'))
+  
   
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
