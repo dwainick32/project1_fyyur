@@ -135,11 +135,9 @@ def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
   try:
-    Venue.query.filter_by(id=venue_id).delete()
-    db.session.commit()
+    Venue.query.filter_by(id=venue_id).one.delete()
     flash('Venue deleted')
   except:
-    db.session.rollback()
     traceback.print_exc()
     flash('Venue was not successfully deleted')
   finally:
@@ -166,7 +164,7 @@ def search_artists():
   # search for "band" should return "The Wild Sax Band".
   #tips: query database, loop through the results and return what comes up
   search_term = request.form.get('search_term')
-  results = Artist.query.
+  #results = Artist.query.
   response={
     "count": 1,
     "data": [{
