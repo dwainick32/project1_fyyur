@@ -135,13 +135,11 @@ def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
   try:
-    Venue.query.filter_by(id=venue_id).one().delete()
+    Venue.query.filter_by(id=venue_id).delete()
     flash('Venue deleted')
   except:
     traceback.print_exc()
     flash('Venue was not successfully deleted')
-  finally:
-    db.session.close()
   
   return redirect(url_for('index'))
   
