@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
+import traceback
 import json
 import dateutil.parser
 import babel
@@ -13,20 +13,22 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
-from models import *
+
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
-db = SQLAlchemy(app)
+
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
+
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # TODO: connect to a local postgresql database
 #connected to the database in config.py
 
-
+from models import *
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -47,7 +49,9 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-  return render_template('pages/home.html')
+  recently_listed_artist = Artist.query.order_by(Artist.id.desc()).limit(5).all() 
+  recently_listed_venue = Venue.query.order_by(Venue.id.desc()).limit(5).all() 
+  return render_template('pages/home.html', recently_listed_artist=recently_listed_artist, recently_listed_venue=recently_listed_venue)
 
 
 #  Venues
@@ -67,6 +71,8 @@ def search_venues():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+  #get back the count as well using len
+  data = Venue.query#like query
   response={
     "count": 1,
     "data": [{
@@ -128,10 +134,21 @@ def create_venue_submission():
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
-
+  try:
+    Venue.query.filter_by(id=venue_id).delete()
+    db.session.commit()
+    flash('Venue deleted')
+  except:
+    db.session.rollback()
+    traceback.print_exc()
+    flash('Venue was not successfully deleted')
+  finally:
+    db.session.close()
+  
+  return redirect(url_for('index'))
+  
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -147,6 +164,9 @@ def search_artists():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
+  #tips: query database, loop through the results and return what comes up
+  search_term = request.form.get('search_term')
+  results = Artist.query.
   response={
     "count": 1,
     "data": [{

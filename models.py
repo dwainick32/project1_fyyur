@@ -1,10 +1,7 @@
-
 from app import db
-
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
@@ -16,7 +13,7 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    shows = db.relationship('Shows', backref='venue')
+    shows = db.relationship('Shows', backref='venue', passive_deletes=True)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
     #implemented the shows field 
@@ -34,7 +31,7 @@ class Artist(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    shows = db.relationship('Shows', backref='artist')
+    shows = db.relationship('Shows', backref='artist', passive_deletes=True)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
     # implemented the shows field 
