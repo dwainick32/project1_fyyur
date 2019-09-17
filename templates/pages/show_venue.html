@@ -29,7 +29,7 @@
 		<p>
 			<i class="fab fa-facebook-f"></i> {% if venue.facebook_link %}<a href="{{ venue.facebook_link }}" target="_blank">{{ venue.facebook_link }}</a>{% else %}No Facebook Link{% endif %}
 		</p>
-		<button id="delete-button" data-id="{{venue.id}}">Delete</button>
+		<a href='/venues' style='color:black'><button id="delete-button" data-id="{{venue.id}}">Delete</button></a>
 		{% if venue.seeking_talent %}
 		<div class="seeking">
 			<p class="lead">Currently seeking talent</p>
@@ -82,8 +82,11 @@
 		const venueId = e.target.dataset['id'];
 		fetch('/venues/' + venueId, {
 			method: 'DELETE'
-		});
+		}
+		)
+		//window.location.href = '/venues'		
 	}
+
 </script>
 {% endblock %}
 

@@ -63,8 +63,11 @@ def venues():
   #       num_shows should be aggregated based on number of upcoming shows per venue.
 
   data1 = Venue.query.all()
+  #create a list of cities 
+  cities = [(d.city, d.state) for d in data1]
+  cities = set(cities)
   #I have to write a query that will query the data as shown above
-  return render_template('pages/venues.html', areas=data1);
+  return render_template('pages/venues.html', cities=cities, venues=data1);
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -105,6 +108,8 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  form = VenueForm()
+  
   name = request.form.get('name')
   city = request.form.get('city')
   state = request.form.get('state')
@@ -116,29 +121,41 @@ def create_venue_submission():
     new_venue = Venue(name=name, city=city, state=state, address=address, phone=phone, image_link=image_link, facebook_link=facebook_link)
     db.session.add(new_venue)
     db.session.commit()
-  # on successful db insert, flash success
+    # on successful db insert, flash success
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
+    # TODO: on unsuccessful db insert, flash an error instead.
   except:
     db.session.rollback()
     flash('An error occured. Venue ' + new_venue.name + ' could not be listed')
   finally:
     db.session.close()
+  recently_listed_artist = Artist.query.order_by(Artist.id.desc()).limit(5).all() 
+  recently_listed_venue = Venue.query.order_by(Venue.id.desc()).limit(5).all() 
+  return render_template('pages/home.html', recently_listed_artist=recently_listed_artist, recently_listed_venue=recently_listed_venue)
+
+  # else:
+  #   flash("Invalid Venue. Please try again.")
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+  #return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
   try:
+    Shows.query.filter_by(venue_id=venue_id).delete()
     Venue.query.filter_by(id=venue_id).delete()
+    db.session.commit()
     flash('Venue deleted')
   except:
-    #traceback.print_exc()
+    traceback.print_exc()
+    db.session.rollback()
     flash('Venue was not successfully deleted')
-    return render_template('pages/home.html')
+  finally:
+    db.session.close()
+  
+  return render_template('pages/home.html')
   
   
   
@@ -192,25 +209,30 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  name = request.form.get('name')
-  city = request.form.get('city')
-  state = request.form.get('state')
-  phone = request.form.get('phone')
-  genres = request.form.get('genres')
-  image_link = request.form.get('image link')
-  facebook_link = request.form.get('facebook link')
-  # TODO: take values from the form submitted, and update existing
-  # artist record with ID <artist_id> using the new attributes
-  artist = Artist.query.get(artist_id)
-  artist.name = name
-  artist.city = city
-  artist.state = state
-  artist.phone = phone
-  artist.genres = genres
-  artist.image_link = image_link
-  artist.facebook_link = facebook_link
-  db.session.commit()
-  db.session.close()
+  form = ArtistForm()
+
+  if form.validate():  
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    phone = request.form.get('phone')
+    genres = request.form.get('genres')
+    image_link = request.form.get('image link')
+    facebook_link = request.form.get('facebook link')
+    # TODO: take values from the form submitted, and update existing
+    # artist record with ID <artist_id> using the new attributes
+    artist = Artist.query.get(artist_id)
+    artist.name = name
+    artist.city = city
+    artist.state = state
+    artist.phone = phone
+    artist.genres = genres
+    artist.image_link = image_link
+    artist.facebook_link = facebook_link
+    db.session.commit()
+    db.session.close()
+  else:
+    flash('Could not edit. Invalid submission.')
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
@@ -224,25 +246,29 @@ def edit_venue(venue_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
-  venue=Venue.query.get(venue_id)
-  name = request.form.get('name')
-  city = request.form.get('city')
-  state = request.form.get('state')
-  phone = request.form.get('phone')
-  genres = request.form.get('genres')
-  image_link = request.form.get('image link')
-  facebook_link = request.form.get('facebook link')
+  form = VenueForm()
+  if form.validate():
+    venue=Venue.query.get(venue_id)
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    phone = request.form.get('phone')
+    genres = request.form.get('genres')
+    image_link = request.form.get('image link')
+    facebook_link = request.form.get('facebook link')
 
-  venue.name = name 
-  venue.city = city
-  venue.state = state
-  venue.phone = phone
-  venue.genres = genres
-  venue.image_link = image_link
-  venue.facebook_link = facebook_link
+    venue.name = name 
+    venue.city = city
+    venue.state = state
+    venue.phone = phone
+    venue.genres = genres
+    venue.image_link = image_link
+    venue.facebook_link = facebook_link
 
-  db.session.commit()
-  db.session.close()
+    db.session.commit()
+    db.session.close()
+  else:
+    flash('Could not edit Venue. Invalid submission')
 
 
   # venue record with ID <venue_id> using the new attributes
@@ -258,30 +284,36 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
+  form = ArtistForm()
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
-  name = request.form.get('name')
-  city = request.form.get('city')
-  state = request.form.get('state')
-  phone = request.form.get('phone')
-  genres = request.form.get('genres')
-  image_link = request.form.get('image link')
-  facebook_link = request.form.get('facebook link')
-  try:
-    new_artist = Artist(name=name, city=city, state=state, phone=phone, genres=genres, image_link=image_link, facebook_link=facebook_link)
-    db.session.add(new_artist)
-    db.session.commit()
-  # on successful db insert, flash success
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  except:
-    db.session.rollback()
-    flash('An error occured. Artist ' + new_artist.name + 'could not be listed')
-  # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-  finally:
-    db.session.close()
-  return render_template('pages/home.html')
+  if form.validate():
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    phone = request.form.get('phone')
+    genres = request.form.get('genres')
+    image_link = request.form.get('image link')
+    facebook_link = request.form.get('facebook link')
+    try:
+      new_artist = Artist(name=name, city=city, state=state, phone=phone, genres=genres, image_link=image_link, facebook_link=facebook_link)
+      db.session.add(new_artist)
+      db.session.commit()
+    # on successful db insert, flash success
+      flash('Artist ' + request.form['name'] + ' was successfully listed!')
+    # TODO: on unsuccessful db insert, flash an error instead.
+    except:
+      db.session.rollback()
+      flash('An error occured. Artist ' + new_artist.name + 'could not be listed')
+    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
+    finally:
+      db.session.close()
+  else:
+    flash("Invalid submission. Please try again")
+  recently_listed_artist = Artist.query.order_by(Artist.id.desc()).limit(5).all() 
+  recently_listed_venue = Venue.query.order_by(Venue.id.desc()).limit(5).all() 
+  return render_template('pages/home.html', recently_listed_artist=recently_listed_artist, recently_listed_venue=recently_listed_venue)
 
 
 #  Shows
@@ -324,7 +356,9 @@ def create_show_submission():
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+  recently_listed_artist = Artist.query.order_by(Artist.id.desc()).limit(5).all() 
+  recently_listed_venue = Venue.query.order_by(Venue.id.desc()).limit(5).all() 
+  return render_template('pages/home.html', recently_listed_artist=recently_listed_artist, recently_listed_venue=recently_listed_venue)
 
 @app.errorhandler(404)
 def not_found_error(error):
