@@ -49,3 +49,5 @@ class Shows(db.Model):
   #think that is the best way to do it 
   #select name from artist where id = artist_id
   artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
+
+db.create_all()
